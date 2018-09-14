@@ -1,10 +1,28 @@
 #include <iostream>
 #include <windows.h>
 #include <wrl/client.h>
+
 #include "CLI11.hpp"
 #include "dxcapi.h"
 
 using Microsoft::WRL::ComPtr;
+
+inline bool is_signed(void* buffer)
+{
+	struct DxilMinimalHeader
+	{
+		UINT32 four_cc;
+		UINT32 hash_digest[4];
+	};
+
+	DxilMinimalHeader* header = reinterpret_cast<DxilMinimalHeader*>(buffer);
+	bool has_digest = false;
+	has_digest |= header->hash_digest[0] != 0x0;
+	has_digest |= header->hash_digest[1] != 0x0;
+	has_digest |= header->hash_digest[2] != 0x0;
+	has_digest |= header->hash_digest[3] != 0x0;
+	return has_digest;
+}
 
 int main(int argc, const char* argv[])
 {
@@ -84,7 +102,7 @@ int main(int argc, const char* argv[])
 	}
 
 	ComPtr<IDxcOperationResult> result;
-	if (FAILED(validator->Validate(containerBlob.Get(), DxcValidatorFlags_InPlaceEdit, &result)))
+	if (FAILED(validator->Validate(containerBlob.Get(), DxcValidatorFlags_InPlaceEdit /* avoid extra copy owned by dxil.dll */, &result)))
 	{
 		std::cout << "Failed to validate dxil container" << std::endl;
 		exit(1);
