@@ -7,14 +7,14 @@
 
 using Microsoft::WRL::ComPtr;
 
-inline bool is_signed(void* buffer)
+struct DxilMinimalHeader
 {
-	struct DxilMinimalHeader
-	{
-		UINT32 four_cc;
-		UINT32 hash_digest[4];
-	};
+	UINT32 four_cc;
+	UINT32 hash_digest[4];
+};
 
+inline bool is_dxil_signed(void* buffer)
+{
 	DxilMinimalHeader* header = reinterpret_cast<DxilMinimalHeader*>(buffer);
 	bool has_digest = false;
 	has_digest |= header->hash_digest[0] != 0x0;
@@ -49,14 +49,22 @@ int main(int argc, const char* argv[])
 	size_t input_size = ftell(input_fh);
 	fseek(input_fh, 0, SEEK_SET);
 
-	std::vector<uint8_t> input_data;
-	input_data.resize(input_size);
-	size_t bytes_read = fread(input_data.data(), 1, input_data.size(), input_fh);
+	std::vector<uint8_t> dxil_data;
+	dxil_data.resize(input_size);
+
+	size_t bytes_read = fread(dxil_data.data(), 1, dxil_data.size(), input_fh);
 	fclose(input_fh);
 
-	if (bytes_read != input_data.size())
+	if (bytes_read != dxil_data.size() || bytes_read < sizeof(DxilMinimalHeader))
 	{
 		std::cout << "Failed to read input file" << std::endl;
+		exit(1);
+	}
+
+	// Ensure the binary isn't already signed
+	if (is_dxil_signed(dxil_data.data()))
+	{
+		std::cout << "Input file is already signed" << std::endl;
 		exit(1);
 	}
 
@@ -92,7 +100,7 @@ int main(int argc, const char* argv[])
 	dxc_create_func(CLSID_DxcLibrary, __uuidof(IDxcLibrary), (void**)&library);
 
 	ComPtr<IDxcBlobEncoding> containerBlob;
-	library->CreateBlobWithEncodingFromPinned((BYTE*)input_data.data(), (UINT32)input_data.size(), 0 /* binary, no code page */, containerBlob.GetAddressOf());
+	library->CreateBlobWithEncodingFromPinned((BYTE*)dxil_data.data(), (UINT32)dxil_data.size(), 0 /* binary, no code page */, containerBlob.GetAddressOf());
 
 	ComPtr<IDxcValidator> validator;
 	if (FAILED(dxc_create_func(CLSID_DxcValidator, __uuidof(IDxcValidator), (void**)&validator)))
@@ -135,14 +143,14 @@ int main(int argc, const char* argv[])
 		exit(2);
 	}
 
-	ComPtr<IDxcBlob> validatedBlob;
-	if (FAILED(result->GetResult(&validatedBlob)))
+	validator = nullptr;
+
+	// Ensure the binary is now signed
+	if (!is_dxil_signed(dxil_data.data()))
 	{
-		std::cout << "Failed to get validated dxil blob" << std::endl;
+		std::cout << "Signing failed!" << std::endl;
 		exit(1);
 	}
-
-	validator = nullptr;
 
 	std::cout << "Saving output file: " << output_file << std::endl;
 
@@ -153,14 +161,17 @@ int main(int argc, const char* argv[])
 		exit(1);
 	}
 
-	size_t bytes_written = fwrite(validatedBlob->GetBufferPointer(), 1, validatedBlob->GetBufferSize(), output_fh);
+	size_t bytes_written = fwrite(dxil_data.data(), 1, dxil_data.size(), output_fh);
 	fclose(output_fh);
 
-	if (bytes_written != validatedBlob->GetBufferSize())
+	if (bytes_written != dxil_data.size())
 	{
 		std::cout << "Failed to write output file" << std::endl;
 		exit(1);
 	}
+
+	containerBlob = nullptr;
+	library = nullptr;
 
 	::FreeLibrary(dxc_module);
 	::FreeLibrary(dxil_module);
