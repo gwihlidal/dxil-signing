@@ -109,6 +109,21 @@ int main(int argc, const char* argv[])
 		exit(1);
 	}
 
+	// Query validation version info
+	{
+		ComPtr<IDxcVersionInfo> version_info;
+		if (FAILED(validator->QueryInterface(__uuidof(IDxcVersionInfo), (void**)&version_info)))
+		{
+			std::cout << "Failed to query version info interface" << std::endl;
+			exit(1);
+		}
+
+		UINT32 major = 0;
+		UINT32 minor = 0;
+		version_info->GetVersion(&major, &minor);
+		std::cout << "Validator version: " << major << "." << minor << std::endl;
+	}
+
 	ComPtr<IDxcOperationResult> result;
 	if (FAILED(validator->Validate(containerBlob.Get(), DxcValidatorFlags_InPlaceEdit /* avoid extra copy owned by dxil.dll */, &result)))
 	{
