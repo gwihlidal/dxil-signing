@@ -99,11 +99,11 @@ int main(int argc, const char* argv[])
 	ComPtr<IDxcLibrary> library;
 	dxc_create_func(CLSID_DxcLibrary, __uuidof(IDxcLibrary), (void**)&library);
 
-	ComPtr<IDxcBlobEncoding> containerBlob;
-	library->CreateBlobWithEncodingFromPinned((BYTE*)dxil_data.data(), (UINT32)dxil_data.size(), 0 /* binary, no code page */, containerBlob.GetAddressOf());
+	ComPtr<IDxcBlobEncoding> container_blob;
+	library->CreateBlobWithEncodingFromPinned((BYTE*)dxil_data.data(), (UINT32)dxil_data.size(), 0 /* binary, no code page */, container_blob.GetAddressOf());
 
 	ComPtr<IDxcValidator> validator;
-	if (FAILED(dxc_create_func(CLSID_DxcValidator, __uuidof(IDxcValidator), (void**)&validator)))
+	if (FAILED(dxil_create_func(CLSID_DxcValidator, __uuidof(IDxcValidator), (void**)&validator)))
 	{
 		std::cout << "Failed to create validator instance" << std::endl;
 		exit(1);
@@ -125,7 +125,7 @@ int main(int argc, const char* argv[])
 	}
 
 	ComPtr<IDxcOperationResult> result;
-	if (FAILED(validator->Validate(containerBlob.Get(), DxcValidatorFlags_InPlaceEdit /* avoid extra copy owned by dxil.dll */, &result)))
+	if (FAILED(validator->Validate(container_blob.Get(), DxcValidatorFlags_InPlaceEdit /* avoid extra copy owned by dxil.dll */, &result)))
 	{
 		std::cout << "Failed to validate dxil container" << std::endl;
 		exit(1);
@@ -185,7 +185,7 @@ int main(int argc, const char* argv[])
 		exit(1);
 	}
 
-	containerBlob = nullptr;
+	container_blob = nullptr;
 	library = nullptr;
 
 	::FreeLibrary(dxc_module);
