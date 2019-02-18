@@ -47,7 +47,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "dxil-val"
-version = "0.1.0"
+version = "0.1.4"
 dependencies = [
  "hassle-rs 0.1.7 (git+https://github.com/gwihlidal/hassle-rs.git)",
  "structopt 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
