@@ -1,0 +1,27 @@
+[package]
+name = "dxil-val"
+version = "0.1.0"
+authors = ["Graham Wihlidal <graham@wihlidal.ca>"]
+edition = "2018"
+description = "Command line utility to perform DXIL validation and signing."
+license = "MIT or APACHE"
+readme = "README.md"
+homepage = "https://github.com/gwihlidal/dxil-signing"
+repository = "https://github.com/gwihlidal/dxil-signing"
+keywords = ["rendering", "shader", "pipeline", "hlsl", "dxc"]
+categories = ["rendering", "rendering::graphics-api"]
+include = [
+    "src/*.rs",
+    "Cargo.toml",
+]
+documentation = "https://docs.rs/dxil-val"
+
+[badges]
+maintenance = { status = "actively-developed" }
+
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"
+
+[dependencies]
+structopt = "0.2"
+hassle-rs = { git = "https://github.com/gwihlidal/hassle-rs.git" }
