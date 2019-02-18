@@ -1,7 +1,7 @@
 # DXIL Signing Utility
 
 ### Usage
-`dxil-signing.exe -i <input.dxil> -o <output.dxil>`
+`dxil-val.exe --input <input.dxil> --output <output.dxil>`
 
 ### Before
 ![Before Signing](images/unsigned.png)
