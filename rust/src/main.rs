@@ -1,3 +1,5 @@
+#![windows_subsystem = "console"]
+
 extern crate hassle_rs;
 extern crate structopt;
 
